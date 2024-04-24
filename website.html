@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Buttons</title>
+</head>
+<body>
+    <h1>Navigation Buttons</h1>
+    <button onclick="goToHomePage()">Home</button>
+    <button onclick="goToYoungestActors()">Youngest Actors</button>
+
+
+    <h2>Profession amount Search</h2>
+    <form id="professionForm" method="get">
+        <label for="professionInput">Enter a profession:</label>
+        <input type="text" id="professionInput" name="prof">
+        <button type="button" onclick="prof_amount()">Go</button>
+    </form>
+
+    <h2>Person_id professions</h2>
+    <form id="person_prof_form" method="get">
+        <label for="person_prof_input">Enter a person id:</label>
+        <input type="text" id="person_prof_input" name="person_prof">
+        <button type="button" onclick="person_profs()">Go</button>
+    </form>
+
+    <script>
+        function goToHomePage() {
+            window.location.href = "http://127.0.0.1:8000/";
+        }
+
+        function goToYoungestActors() {
+            window.location.href = "http://127.0.0.1:8000/youngest_actors";
+        }
+
+        function prof_amount() {
+            var professionInput = document.getElementById("professionInput").value;
+            window.location.href = "http://127.0.0.1:8000/professions_amount/" + professionInput;
+        }
+
+        function person_profs() {
+            var professionInput = document.getElementById("person_prof_input").value;
+            window.location.href = "http://127.0.0.1:8000/person_professions/" + professionInput;
+        }
+
+    </script>
+</body>
+</html>

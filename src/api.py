@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 import mysql.connector
 
 
+
 """
 db = mysql.connector.connect(
     host="localhost",
@@ -132,7 +133,7 @@ def get_writers(prof : str):
 Get first 10 people with specific job
 """
 @app.get("/profession/{prof}")
-def get_writers(prof : str):
+def get_ten_specific_prof(prof : str):
     cursor = db.cursor()
     cursor.execute(f"SELECT p.name, prof.profession FROM people p JOIN peoples_professions prof ON p.id = prof.person WHERE prof.profession = '{prof}';")
     result = cursor.fetchall()
@@ -144,4 +145,42 @@ def get_writers(prof : str):
     ans = f"amount of {prof}s"
 
     return {ans : result[0:10]}
+
+
+"""
+Get top 10 youngest actors
+"""
+@app.get("/youngest_actors")
+def get_youngest_actors():
+    cursor = db.cursor()
+    cursor.execute(f"SELECT * FROM people WHERE death_year = -1 AND birth_year != -1 AND birth_year > 1900 ORDER BY birth_year DESC LIMIT 10;")
+    result = cursor.fetchall()
+    db.commit()
+
+    if result == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    ans = f"youngest actors"
+
+    return {ans : result}
+
+
+"""
+Get every role that a person has worked as 
+"""
+# nm0136797 - Steve Carell
+
+@app.get("/person_professions/{person_id}")
+def get_person_professions(person_id: str):
+    cursor = db.cursor()
+    cursor.execute(f"SELECT prof.profession FROM people p JOIN peoples_professions prof ON p.id = prof.person WHERE p.id = '{person_id}';")
+    result = cursor.fetchall()
+    db.commit()
+
+    if len(result) == 0:
+        raise HTTPException(status_code=404, detail="Person not found")
+
+    ans = f"id {person_id} is working as "
+
+    return {ans : result}
 
