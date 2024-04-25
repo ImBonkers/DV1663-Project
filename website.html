@@ -18,11 +18,27 @@
         <button type="button" onclick="prof_amount()">Go</button>
     </form>
 
+
+
     <h2>Person_id professions</h2>
     <form id="person_prof_form" method="get">
         <label for="person_prof_input">Enter a person id:</label>
         <input type="text" id="person_prof_input" name="person_prof">
         <button type="button" onclick="person_profs()">Go</button>
+    </form>
+    
+    <h2>Get genre by title_id</h2>
+    <form id="title_gen_form" method="get">
+        <label for="title_gen_input">Enter a person id:</label>
+        <input type="text" id="title_gen_input" name="thing">
+        <button type="button" onclick="title_gen()">Go</button>
+    </form>
+
+    <h2>Get titles by genres</h2>
+    <form id="gen_title_form" method="get">
+        <label for="title_gen_input">Enter genres seperated by ",":</label>
+        <input type="text" id="gen_title_input" name="thing">
+        <button type="button" onclick="gens()">Go</button>
     </form>
 
     <script>
@@ -43,6 +59,21 @@
             var professionInput = document.getElementById("person_prof_input").value;
             window.location.href = "http://127.0.0.1:8000/person_professions/" + professionInput;
         }
+
+        function title_gen() {
+            var input = document.getElementById("title_gen_input").value;
+            window.location.href = "http://127.0.0.1:8000/genre/" + input;
+        }
+
+        function gens() {
+            var input = document.getElementById("gen_title_input").value;
+
+            let url = "?g=" + input.replace(/\s/g, '').replace(/,/g, '&g=');
+
+            window.location.href = "http://127.0.0.1:8000/genre/" + url;
+        }
+
+        
 
     </script>
 </body>

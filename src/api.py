@@ -176,3 +176,43 @@ def get_person_professions(person_id: str):
 
     return {ans : result}
 
+
+@app.get("/genre/{title_id}")
+def get_genre_by_id(title_id : str):
+    cursor = db.cursor()
+    cursor.execute(f"SELECT genre FROM titles_genres WHERE title = '{title_id}';")
+    result = cursor.fetchall()
+    db.commit()
+
+    if len(result) == 0:
+        raise HTTPException(status_code=404, detail="Person not found")
+
+    ans = f"id {title_id} is a "
+
+    return {ans : result}
+
+
+
+
+
+"""
+@app.get("/genre/{genre}")
+def get_person_professions(genre : list):
+
+    result = []
+
+    for item in genre:
+        cursor = db.cursor()
+        cursor.execute(f"SELECT * FROM titles_genre WHERE genre = '{item}';")
+        result.append(cursor.fetchall())
+        db.commit()
+
+        if len(result) == 0:
+            raise HTTPException(status_code=404, detail="Person not found")
+
+        ans = f"id {genre} is working as "
+
+    return {ans : result}
+"""
+    
+
