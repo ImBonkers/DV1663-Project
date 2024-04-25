@@ -1,7 +1,8 @@
 import mysql.connector
 import os
 from typing import Union
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Query,  HTTPException
+from typing import List
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -75,6 +76,36 @@ def get_title(name: str):
                    AGAINST('+{name}' IN BOOLEAN MODE)
                    AND type = 'movie'
                    """)
+    result = cursor.fetchall()
+    db.commit()
+
+    if len(result) == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    return {"titles": result}
+
+
+@app.get("/genres/")
+def get_movies_with_genres(g: List[str] = Query(None)):
+    print("Query: ", g)
+    g = [g.title() for g in g]
+    list_str = str(g)[1:-1].strip(",")
+    list_str = "(" + list_str + ")"
+    print("List_str: ", list_str)
+
+    query = "SELECT t.id, t.title\n"
+    for idx in range(len(g)):
+        query += f", tg{idx}.genre AS genre{idx}\n"
+    query += "FROM titles t\n"
+
+    for idx in range(len(g)):
+        query += f" JOIN titles_genres tg{idx} ON t.id = tg{idx}.title AND tg{idx}.genre = '{g[idx]}'\n"
+    query += "limit 1000"
+
+    print(query)
+
+    cursor = db.cursor()
+    cursor.execute(query)
     result = cursor.fetchall()
     db.commit()
 
