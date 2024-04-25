@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 
 def main():
     load_dotenv()
-    print(os.getenv("DB_PASSWORD"))
     connection = mysql.connector.connect(
         host=os.getenv("DB_IP_ADDRESS"),
         user=os.getenv("DB_USER"),

@@ -1,19 +1,22 @@
+import mysql.connector
+import os
 from typing import Union
 from fastapi import FastAPI, HTTPException
-import mysql.connector
+from dotenv import load_dotenv
 
-db = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="password",
-    database="imdb"
+load_dotenv()
+connection = mysql.connector.connect(
+    host=os.getenv("DB_IP_ADDRESS"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_DATABASE"),
 )
 
 app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return "Imdb Search API"
 
 
 @app.get("/items/{item_id}")

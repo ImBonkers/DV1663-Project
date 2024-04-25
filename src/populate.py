@@ -1,8 +1,30 @@
 import io
-from itertools import islice
-from flask import Flask, request, jsonify
+import os
 import mysql.connector
+from dotenv import load_dotenv
 from tqdm import tqdm
+from itertools import islice
+
+def drop_tables(connection):
+    cursor = connection.cursor()
+
+    print("Dropping tables")
+    print("Dropping titles_people table")
+    cursor.execute("DROP TABLE IF EXISTS titles_people")
+
+    print("Dropping titles_genres table")
+    cursor.execute("DROP TABLE IF EXISTS titles_genres")
+
+    print("Dropping titles table")
+    cursor.execute("DROP TABLE IF EXISTS titles")
+
+    print("Dropping peoples_professions table")
+    cursor.execute("DROP TABLE IF EXISTS peoples_professions")
+
+    print("Dropping people table")
+    cursor.execute("DROP TABLE IF EXISTS people")
+
+    connection.commit()
 
 def setup_tables(connection):
     cursor = connection.cursor()
@@ -12,57 +34,85 @@ def setup_tables(connection):
     cursor.execute("""CREATE TABLE IF NOT EXISTS 
                    people (
                        id               VARCHAR(20) PRIMARY KEY,
-                       name             VARCHAR(300),
-                       birth_year       INT,
-                       death_year       INT
+                       name             VARCHAR(300) NOT NULL,
+                       birth_year       INT DEFAULT -1,
+                       death_year       INT DEFAULT -1,
+                       FULLTEXT(name),
+                       INDEX idx_id (id),
+                       INDEX idx_name (name)
                     )
+                   CHARACTER SET utf8mb4
+                   COLLATE utf8mb4_bin
                    """)
 
     print("Creating titles table...")
     cursor.execute(""" CREATE TABLE IF NOT EXISTS
                    titles (
                        id               VARCHAR(20) PRIMARY KEY,
-                       type             VARCHAR(20),
-                       title            VARCHAR(300),
-                       original_title   VARCHAR(300),
-                       is_adult         BOOLEAN,
-                       start_year       INT,
-                       runtime          INT
+                       type             VARCHAR(20) NOT NULL,
+                       title            VARCHAR(300) NOT NULL,
+                       original_title   VARCHAR(300) DEFAULT "",
+                       is_adult         BOOLEAN DEFAULT FALSE,
+                       start_year       INT DEFAULT -1,
+                       runtime          INT DEFAULT -1,
+                       FULLTEXT(title),
+                       FULLTEXT(original_title),
+                       INDEX idx_id (id),
+                       INDEX idx_title (title),
+                       INDEX idx_original_title (original_title),
+                       INDEX idx_type (type)
                     )
+                   CHARACTER SET utf8mb4
+                   COLLATE utf8mb4_bin
                    """)
 
     print("Creating junction tables...")
     print("Creating person & movie junction table...")
     cursor.execute(""" CREATE TABLE IF NOT EXISTS
                     titles_people (
-                        id              INT PRIMARY KEY,
-                        role            VARCHAR(40),
-                        char_name       VARCHAR(40),
-                        n_id            VARCHAR(20),
-                        t_id            VARCHAR(20),
-                        FOREIGN KEY (n_id) REFERENCES people(id),
-                        FOREIGN KEY (t_id) REFERENCES titles(id)
+                        id              INT AUTO_INCREMENT PRIMARY KEY,
+                        role            VARCHAR(40) NOT NULL,
+                        char_name       VARCHAR(40) DEFAULT "",
+                        person          VARCHAR(20) NOT NULL,
+                        title           VARCHAR(20) NOT NULL,
+                        FULLTEXT(char_name),
+                        FOREIGN KEY (person) REFERENCES people(id),
+                        FOREIGN KEY (title)  REFERENCES titles(id),
+                        INDEX idx_role (role),
+                        INDEX idx_char_name (char_name),
+                        INDEX idx_person (person),
+                        INDEX idx_title (title)
                     )
+                   CHARACTER SET utf8mb4
+                   COLLATE utf8mb4_bin
                    """)
 
     print("Creating movie & genre junction table...")
     cursor.execute(""" CREATE TABLE IF NOT EXISTS
                    titles_genres (
-                       id               INT PRIMARY KEY,
-                       genre            VARCHAR(40),
-                       t_id             VARCHAR(20),
-                       FOREIGN KEY (t_id) REFERENCES titles(id)
+                       id               INT AUTO_INCREMENT PRIMARY KEY,
+                       genre            VARCHAR(40) NOT NULL,
+                       title            VARCHAR(20) NOT NULL,
+                       FOREIGN KEY (title) REFERENCES titles(id),
+                       INDEX idx_genre (genre),
+                       INDEX idx_title (title)
                     )
+                   CHARACTER SET utf8mb4
+                   COLLATE utf8mb4_bin
                    """)
 
     print("Creating person & profession junction table...")
     cursor.execute(""" CREATE TABLE IF NOT EXISTS
                    peoples_professions (
-                       id               INT PRIMARY KEY,
-                       profession       VARCHAR(40),
-                       n_id             VARCHAR(20),
-                       FOREIGN KEY (n_id) REFERENCES people(id)
+                       id               INT AUTO_INCREMENT PRIMARY KEY,
+                       profession       VARCHAR(40) NOT NULL,
+                       person           VARCHAR(20) NOT NULL,
+                       FOREIGN KEY (person) REFERENCES people(id),
+                       INDEX idx_profession (profession),
+                       INDEX idx_person (person)
                     )
+                   CHARACTER SET utf8mb4
+                   COLLATE utf8mb4_bin
                    """)
 
 def fill_names_table(data, connection):
@@ -84,13 +134,12 @@ def fill_names_table(data, connection):
     profession_query = f"""INSERT IGNORE INTO
                             peoples_professions (
                                     id,
-                                    n_id,
+                                    person,
                                     profession
                                     )
                             VALUES (%s, %s, %s)
                         """
 
-    last_iteration = 1500000
     backup_counter = 0
 
     people_entries = []
@@ -150,7 +199,7 @@ def fill_titles_table(data, connection):
                     titles_genres (
                             id,
                             genre,
-                            t_id
+                            title
                             )
                     VALUES (%s, %s, %s)
                     """
@@ -217,8 +266,8 @@ def fill_titles_people_table(data, connection):
                                     id,
                                     role,
                                     char_name,
-                                    n_id,
-                                    t_id
+                                    person,
+                                    title
                                     )
                             VALUES (%s, %s, %s, %s, %s)
                             """
@@ -260,30 +309,45 @@ def fill_titles_people_table(data, connection):
 
 def main():
 
+    """
     connection = mysql.connector.connect(
            host="localhost",
            user="root",
            password="password",
            database="imdb",
            )
+    """
+
+    load_dotenv()
+    connection = mysql.connector.connect(
+        host=os.getenv("DB_IP_ADDRESS"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_DATABASE"),
+    )
+
+    #drop_tables(connection)
 
     setup_tables(connection)
 
     data = open("../data/name.basics.tsv", "r")
     data = data.readlines()
-    data = data[1:]
-    #fill_names_table(data, connection)
+    data = data[8000000:]
+    fill_names_table(data, connection)
     
     data = open("../data/title.basics.tsv", "r")
     data = data.readlines()
     data = data[1:]
-    #fill_titles_table(data, connection)
+    fill_titles_table(data, connection)
 
 
     data = open("../data/title.principals.tsv", "r")
     data = data.readlines()
     data = data[1:]
     fill_titles_people_table(data, connection)
+
+    print("Done")
+    connection.close()
 
 if __name__ == '__main__':
     main()
