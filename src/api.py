@@ -5,12 +5,13 @@ from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 
 load_dotenv()
-connection = mysql.connector.connect(
+db = mysql.connector.connect(
     host=os.getenv("DB_IP_ADDRESS"),
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
     database=os.getenv("DB_DATABASE"),
 )
+
 
 app = FastAPI()
 
@@ -24,7 +25,7 @@ def read_item(item_id, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
 
-@app.get("/person/{id}")
+@app.get("/people_id/{id}")
 def get_person(id: str, test: Union[str, None] = None):
     cursor = db.cursor()
     cursor.execute(f"SELECT * FROM people WHERE id = \"{id}\"")
@@ -44,6 +45,7 @@ def get_person(name: str):
     cursor.execute(f"SELECT name FROM people WHERE MATCH(name) AGAINST('+{name}' IN BOOLEAN MODE)")
     result = cursor.fetchall()
     db.commit()
+
 
     if len(result) == 0:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -82,4 +84,95 @@ def get_title(name: str):
     return {"titles": result}
 
 
+
+
+"""
+Get the amount of people with specific profession
+"""
+@app.get("/professions_amount/{prof}")
+def get_writers(prof: str):
+    cursor = db.cursor()
+    cursor.execute(f"SELECT COUNT(*) FROM people p JOIN peoples_professions prof ON p.id = prof.person WHERE prof.profession = '{prof}';")
+    result = cursor.fetchone()[0]  # Fetch the count directly
+    db.commit()
+
+    if result == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    ans = f"amount of {prof}s"
+
+    return {ans: result}
+
+"""
+(!) JÄMFÖR VILKEN SOM ÄR SNABBAST
+@app.get("/professions_amount/{prof}")
+def get_writers(prof : str):
+    cursor = db.cursor()
+    cursor.execute(f"SELECT p.name, prof.profession FROM people p JOIN peoples_professions prof ON p.id = prof.person WHERE prof.profession = '{prof}';")
+    result = cursor.fetchall()
+    db.commit()
+
+    if len(result) == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    ans = f"amount of {prof}s"
+
+    return {ans : len(result)}
+"""
+
+
+"""
+Get first 10 people with specific job
+"""
+@app.get("/profession/{prof}")
+def get_ten_specific_prof(prof : str):
+    cursor = db.cursor()
+    cursor.execute(f"SELECT p.name, prof.profession FROM people p JOIN peoples_professions prof ON p.id = prof.person WHERE prof.profession = '{prof}';")
+    result = cursor.fetchall()
+    db.commit()
+
+    if len(result) == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    ans = f"amount of {prof}s"
+
+    return {ans : result[0:10]}
+
+
+"""
+Get top 10 youngest actors
+"""
+@app.get("/youngest_actors")
+def get_youngest_actors():
+    cursor = db.cursor()
+    cursor.execute(f"SELECT * FROM people WHERE death_year = -1 AND birth_year != -1 AND birth_year > 1900 ORDER BY birth_year DESC LIMIT 10;")
+    result = cursor.fetchall()
+    db.commit()
+
+    if result == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    ans = f"youngest actors"
+
+    return {ans : result}
+
+
+"""
+Get every role that a person has worked as 
+"""
+# nm0136797 - Steve Carell
+
+@app.get("/person_professions/{person_id}")
+def get_person_professions(person_id: str):
+    cursor = db.cursor()
+    cursor.execute(f"SELECT prof.profession FROM people p JOIN peoples_professions prof ON p.id = prof.person WHERE p.id = '{person_id}';")
+    result = cursor.fetchall()
+    db.commit()
+
+    if len(result) == 0:
+        raise HTTPException(status_code=404, detail="Person not found")
+
+    ans = f"id {person_id} is working as "
+
+    return {ans : result}
 
