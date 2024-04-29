@@ -18,8 +18,6 @@
         <button type="button" onclick="prof_amount()">Go</button>
     </form>
 
-
-
     <h2>Person_id professions</h2>
     <form id="person_prof_form" method="get">
         <label for="person_prof_input">Enter a person id:</label>
@@ -39,6 +37,13 @@
         <label for="title_gen_input">Enter genres seperated by ",":</label>
         <input type="text" id="gen_title_input" name="thing">
         <button type="button" onclick="gens()">Go</button>
+    </form>
+
+    <h2>Person_id amount of movies</h2>
+    <form id="form" method="get">
+        <label for="input">Enter a person id:</label>
+        <input type="text" id="amount_of_movies_by_person" name="thing">
+        <button type="button" onclick="person_profs()">Go</button>
     </form>
 
     <script>
@@ -65,6 +70,11 @@
             window.location.href = "http://127.0.0.1:8000/genre/" + input;
         }
 
+        function amount_of_movies_by_person() {
+            var input = document.getElementById("amount_of_movies_by_person").value;
+            window.location.href = "http://127.0.0.1:8000/person/movie_count" + input;
+        }
+
         function gens() {
             var input = document.getElementById("gen_title_input").value;
 
@@ -72,6 +82,8 @@
 
             window.location.href = "http://127.0.0.1:8000/genres/" + url;
         }
+
+
 
         
 
