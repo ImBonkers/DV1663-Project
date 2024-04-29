@@ -26,6 +26,54 @@ def drop_tables(connection):
 
     connection.commit()
 
+def setup_procedures(connection):
+    cursor = connection.cursor()
+    
+    print("Creating procedures...")
+    try:
+        cursor.execute("DROP PROCEDURE IF EXISTS GetTitlesByGenres;")
+        cursor.execute("""
+                        CREATE PROCEDURE GetTitlesByGenres(genre_list VARCHAR(255), _start_idx INT, _end_idx INT)
+                        BEGIN
+                            DECLARE genre VARCHAR(255);
+                            DECLARE pos INT DEFAULT 1;
+                            DECLARE next_comma INT;
+                            DECLARE iter INT DEFAULT 1;
+                            DECLARE base_query VARCHAR(1000) DEFAULT 'SELECT t.id, t.title FROM titles t';
+                            DECLARE join_clause VARCHAR(255);
+                            DECLARE row_count INT;
+
+                            SET row_count = _end_idx - _start_idx;
+
+                            REPEAT
+                                SET next_comma = LOCATE(',', genre_list, pos);
+                                
+                                IF next_comma = 0 THEN
+                                    SET genre = SUBSTRING(genre_list, pos);
+                                ELSE
+                                    SET genre = SUBSTRING(genre_list, pos, next_comma - pos);
+                                    SET pos = next_comma + 1;
+                                END IF;
+                                
+                                SET join_clause = CONCAT(' JOIN titles_genres tg', iter, ' ON t.id = tg', iter, '.title AND tg', iter, '.genre = ''', TRIM(genre), '''');
+                                SET base_query = CONCAT(base_query, join_clause);
+                                
+                                SET iter = iter + 1;
+                                
+                            UNTIL next_comma = 0 END REPEAT;
+                            
+                            SET base_query = CONCAT(base_query, ' LIMIT ', _start_idx, ',', row_count, ';');
+                            SET @query = base_query;
+
+                            PREPARE stmt FROM @query;
+                            EXECUTE stmt;
+                            DEALLOCATE PREPARE stmt;
+                        END;
+                       """)
+    except Exception as e:
+        print("Failed to execute query:\n", e)
+
+
 def setup_tables(connection):
     cursor = connection.cursor()
 
@@ -114,6 +162,7 @@ def setup_tables(connection):
                    CHARACTER SET utf8mb4
                    COLLATE utf8mb4_bin
                    """)
+    connection.commit()
 
 def fill_names_table(data, connection):
     print("Inserting data into Person tables")
@@ -326,25 +375,33 @@ def main():
         database=os.getenv("DB_DATABASE"),
     )
 
+    if (connection.is_connected()):
+        print("Connected to MySQL database")
+    else:
+        print("Connection failed")
+        return
+
     #drop_tables(connection)
 
-    setup_tables(connection)
+    #setup_tables(connection)
+
+    setup_procedures(connection)
 
     data = open("../data/name.basics.tsv", "r")
     data = data.readlines()
-    data = data[8000000:]
-    fill_names_table(data, connection)
+    data = data[1:]
+    #fill_names_table(data, connection)
     
     data = open("../data/title.basics.tsv", "r")
     data = data.readlines()
     data = data[1:]
-    fill_titles_table(data, connection)
+    #fill_titles_table(data, connection)
 
 
     data = open("../data/title.principals.tsv", "r")
     data = data.readlines()
     data = data[1:]
-    fill_titles_people_table(data, connection)
+    #fill_titles_people_table(data, connection)
 
     print("Done")
     connection.close()

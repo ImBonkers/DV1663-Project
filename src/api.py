@@ -1,8 +1,7 @@
 import mysql.connector
 import os
-from typing import Union
+from typing import Union, List
 from fastapi import FastAPI, Query,  HTTPException
-from typing import List
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -86,28 +85,22 @@ def get_title(name: str):
 
 
 @app.get("/genres/")
-def get_movies_with_genres(g: List[str] = Query(None)):
-    print("Query: ", g)
+def get_movies_with_genres(
+        g: List[str] = Query(None),
+        start_idx: Union[str, None] = 0,
+        end_idx: Union[str, None] = 10):
+
     g = [g.title() for g in g]
-    list_str = str(g)[1:-1].strip(",")
-    list_str = "(" + list_str + ")"
-    print("List_str: ", list_str)
-
-    query = "SELECT t.id, t.title\n"
-    for idx in range(len(g)):
-        query += f", tg{idx}.genre AS genre{idx}\n"
-    query += "FROM titles t\n"
-
-    for idx in range(len(g)):
-        query += f" JOIN titles_genres tg{idx} ON t.id = tg{idx}.title AND tg{idx}.genre = '{g[idx]}'\n"
-    query += "limit 1000"
-
-    print(query)
+    list_str = str(g)[1:-1].strip(",").strip("'")
 
     cursor = db.cursor()
-    cursor.execute(query)
-    result = cursor.fetchall()
+    cursor.callproc("GetTitlesByGenres", ['Drama, Short', start_idx, end_idx])
     db.commit()
+
+    # Procedures store results in an iterator, since GetTItlesByGenres
+    # only has one result we need to get that from the iterator
+    data = cursor.stored_results()
+    result = next(data).fetchall()
 
     if len(result) == 0:
         raise HTTPException(status_code=404, detail="Item not found")
