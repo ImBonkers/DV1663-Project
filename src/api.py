@@ -84,17 +84,30 @@ def get_title(name: str):
     return {"titles": result}
 
 
+@app.get("/person/movie_count/{id}")
+def get_movie_count_for_person(id: str):
+    cursor = db.cursor()
+    cursor.execute(f"SELECT count_movies_for_person_id(\"{id}\")")
+    result = cursor.fetchall()
+    db.commit()
+
+    if result == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    return {"count": result}
+
+
 @app.get("/genres/")
 def get_movies_with_genres(
         g: List[str] = Query(None),
-        start_idx: Union[str, None] = 0,
-        end_idx: Union[str, None] = 10):
+        start: Union[str, None] = 0,
+        end: Union[str, None] = 10):
 
     g = [g.title() for g in g]
     list_str = str(g)[1:-1].strip(",").strip("'")
 
     cursor = db.cursor()
-    cursor.callproc("GetTitlesByGenres", ['Drama, Short', start_idx, end_idx])
+    cursor.callproc("GetTitlesByGenres", ['Drama, Short', start, end])
     db.commit()
 
     # Procedures store results in an iterator, since GetTItlesByGenres

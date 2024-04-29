@@ -73,6 +73,33 @@ def setup_procedures(connection):
     except Exception as e:
         print("Failed to execute query:\n", e)
 
+def setup_functions(connection):
+    cursor = connection.cursor()
+
+    print("Creating functions...")
+
+    try:
+        cursor.execute("DROP FUNCTION IF EXISTS count_movies_for_person_id;")
+        cursor.execute("""
+                    DELIMITER //
+
+                    CREATE FUNCTION count_movies_for_person_id(person_id VARCHAR(20)) RETURNS INT
+                    DETERMINISTIC
+                    BEGIN
+                        DECLARE movie_count INT;
+
+                        SELECT COUNT(DISTINCT tp.title) INTO movie_count
+                        FROM titles_people tp
+                        WHERE tp.person = person_id;
+
+                        RETURN movie_count;
+                    END //
+
+                    DELIMITER ;
+                       """)
+    except Exception as e:
+        print("Failed to execute query:\n", e)
+
 
 def setup_tables(connection):
     cursor = connection.cursor()
@@ -385,7 +412,9 @@ def main():
 
     #setup_tables(connection)
 
-    setup_procedures(connection)
+    #setup_procedures(connection)
+
+    setup_functions(connection)
 
     data = open("../data/name.basics.tsv", "r")
     data = data.readlines()
