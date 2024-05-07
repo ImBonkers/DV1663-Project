@@ -81,8 +81,6 @@ def setup_functions(connection):
     try:
         cursor.execute("DROP FUNCTION IF EXISTS count_movies_for_person_id;")
         cursor.execute("""
-                    DELIMITER //
-
                     CREATE FUNCTION count_movies_for_person_id(person_id VARCHAR(20)) RETURNS INT
                     DETERMINISTIC
                     BEGIN
@@ -93,9 +91,7 @@ def setup_functions(connection):
                         WHERE tp.person = person_id;
 
                         RETURN movie_count;
-                    END //
-
-                    DELIMITER ;
+                    END;
                        """)
     except Exception as e:
         print("Failed to execute query:\n", e)

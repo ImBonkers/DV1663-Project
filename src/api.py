@@ -39,10 +39,10 @@ def get_person(id: str, test: Union[str, None] = None):
 
 @app.get("/people/{name}")
 def get_person(name: str):
-    name = name.lower()
     name = name.replace(" ", " +")
     cursor = db.cursor()
-    cursor.execute(f"SELECT name FROM people WHERE MATCH(name) AGAINST('+{name}' IN BOOLEAN MODE)")
+    print(name)
+    cursor.execute(f"SELECT name FROM people WHERE MATCH(name) AGAINST(\"{name}\" IN BOOLEAN MODE)")
     result = cursor.fetchall()
     db.commit()
 
@@ -66,14 +66,12 @@ def get_title(id: str):
 
 @app.get("/titles/{name}")
 def get_title(name: str):
-    name = name.lower()
     name = name.replace(" ", " +")
     cursor = db.cursor()
     cursor.execute(f"""
                    SELECT * FROM titles 
                    WHERE MATCH(title)
-                   AGAINST('+{name}' IN BOOLEAN MODE)
-                   AND type = 'movie'
+                   AGAINST(\"{name}\" IN BOOLEAN MODE)
                    """)
     result = cursor.fetchall()
     db.commit()
@@ -85,7 +83,7 @@ def get_title(name: str):
 
 
 @app.get("/person/movie_count/{id}")
-def get_movie_count_for_person(id: str):
+def get_movie_count_by_person(id: str):
     cursor = db.cursor()
     cursor.execute(f"SELECT count_movies_for_person_id(\"{id}\")")
     result = cursor.fetchall()
@@ -98,7 +96,7 @@ def get_movie_count_for_person(id: str):
 
 
 @app.get("/genres/")
-def get_movies_with_genres(
+def get_titles_by_genres(
         g: List[str] = Query(None),
         start: Union[str, None] = 0,
         end: Union[str, None] = 10):
@@ -127,7 +125,7 @@ def get_movies_with_genres(
 Get the amount of people with specific profession
 """
 @app.get("/professions_amount/{prof}")
-def get_writers(prof: str):
+def get_amount_profession(prof: str):
     cursor = db.cursor()
     cursor.execute(f"SELECT COUNT(*) FROM people p JOIN peoples_professions prof ON p.id = prof.person WHERE prof.profession = '{prof}';")
     result = cursor.fetchone()[0]  # Fetch the count directly
@@ -215,7 +213,7 @@ def get_person_professions(person_id: str):
 
 
 @app.get("/genre/{title_id}")
-def get_genre_by_id(title_id : str):
+def get_genre_by_title_id(title_id : str):
     cursor = db.cursor()
     cursor.execute(f"SELECT genre FROM titles_genres WHERE title = '{title_id}';")
     result = cursor.fetchall()

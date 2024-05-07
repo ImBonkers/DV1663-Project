@@ -10,6 +10,19 @@
     <button onclick="goToHomePage()">Home</button>
     <button onclick="goToYoungestActors()">Youngest Actors</button>
 
+    <h2>Search for person</h2>
+    <form id="personForm" method="get">
+        <label for="personInput">Enter a name:</label>
+        <input type="text" id="personInput" name="person">
+        <button type="button" onclick="person_search()">Go</button>
+    </form>
+
+    <h2>Search for media</h2>
+    <form id="mediaForm" method="get">
+        <label for="mediaInput">Enter a name:</label>
+        <input type="text" id="mediaInput" name="media">
+        <button type="button" onclick="media_search()">Go</button>
+    </form>
 
     <h2>Profession amount Search</h2>
     <form id="professionForm" method="get">
@@ -55,6 +68,16 @@
             window.location.href = "http://127.0.0.1:8000/youngest_actors";
         }
 
+        function person_search() {
+            var personInput = document.getElementById("personInput").value;
+            window.location.href = "http://127.0.0.1:8000/people/" + personInput;
+        }
+
+        function media_search() {
+            var mediaInput = document.getElementById("mediaInput").value;
+            window.location.href = "http://127.0.0.1:8000/titles/" + mediaInput;
+        }
+
         function prof_amount() {
             var professionInput = document.getElementById("professionInput").value;
             window.location.href = "http://127.0.0.1:8000/professions_amount/" + professionInput;
@@ -82,11 +105,6 @@
 
             window.location.href = "http://127.0.0.1:8000/genres/" + url;
         }
-
-
-
-        
-
     </script>
 </body>
 </html>
