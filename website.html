@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Navigation Buttons</title>
+    <style>
+    /* Style for the table and its cells */
+    table {
+        width: 80%; /* Adjust width as needed */
+        border-collapse: collapse; /* Ensures borders between cells are shared */
+        margin: 20px auto; /* Center the table and add some margin */
+    }
+    th, td {
+        border: 1px solid black; /* Border around each cell */
+        padding: 8px; /* Padding inside each cell */
+        text-align: left; /* Align text to the left */
+    }
+    th {
+        background-color: #f2f2f2; /* Light grey background for header cells */
+    }
+</style>
 </head>
 <body>
     <h1>Navigation Buttons</h1>
@@ -49,28 +65,28 @@
     <form id="gen_title_form" method="get">
         <label for="title_gen_input">Enter genres seperated by ",":</label>
         <input type="text" id="gen_title_input" name="thing">
-        <button type="button" onclick="gens()">Go</button>
+        <input type="number" id="gen_title_min" name="quantity" min="1" max="1000" step="1">
+        <input type="number" id="gen_title_max" name="quantity" min="1" max="1000" step="1">
+        <button type="button" onclick="get_titles_from_genres()">Go</button>
     </form>
 
-    <h2>Person_id amount of movies</h2>
+    <h2>Person_id amount of titles</h2>
     <form id="form" method="get">
         <label for="input">Enter a person id:</label>
         <input type="text" id="amount_of_movies_by_person" name="thing">
-        <button type="button" onclick="person_profs()">Go</button>
+        <button type="button" onclick="get_movie_count_by_person()">Go</button>
     </form>
 
     <div id="table-container"></div>
 
     <script>
-        async function fetchData() {
+        async function fetchData(uri) {
             try {
-                // Change the URL to the API you want to use
-                const response = await fetch("http://127.0.0.1:8000/person/John");
-                const data = await response.json();
-                console.log(data);
-                
-                // Call function to create table with data
-                createTable(data);
+                const response = await fetch(uri);
+                const json = await response.json();
+                console.log(json);
+
+                createTable(json);
             } catch (error) {
                 console.error('Error fetching data: ', error);
             }
@@ -79,81 +95,85 @@
         function createTable(data) {
             const container = document.getElementById('table-container');
             const table = document.createElement('table');
+            table.style.width = '100%';
             table.setAttribute('border', '1');
-            
-            const thead = document.createElement('thead');
-            const headerRow = document.createElement('tr');
-            if (data.length > 0) {
-                Object.keys(data[0]).forEach(key => {
-                    const headerCell = document.createElement('th');
-                    headerCell.textContent = key;
-                    headerRow.appendChild(headerCell);
-                });
-                thead.appendChild(headerRow);
-                table.appendChild(thead);
-            }
 
-            const tbody = document.createElement('tbody');
-            data.forEach(item => {
-                const row = document.createElement('tr');
-                Object.values(item).forEach(value => {
-                    const cell = document.createElement('td');
-                    cell.textContent = value;
-                    row.appendChild(cell);
+            const header = table.createTHead();
+            const headerRow = header.insertRow();
+            const headerCell = document.createElement('th');
+            headerCell.colSpan = data.data[0].length;  // Assuming all rows have the same number of columns
+            headerCell.textContent = data.header;
+            headerRow.appendChild(headerCell);
+
+            const body = table.createTBody();
+
+            data.data.forEach(subArray => {
+                const row = body.insertRow();
+                subArray.forEach(item => {
+                    const cell = row.insertCell();
+                    cell.textContent = item;
                 });
-                tbody.appendChild(row);
             });
-            table.appendChild(tbody);
-            
+
+            container.innerHTML = ''; // Clear previous tables if any
             container.appendChild(table);
         }
-
-        fetchData();
         
         function goToHomePage() {
             window.location.href = "http://127.0.0.1:8000/";
         }
 
         function goToYoungestActors() {
-            window.location.href = "http://127.0.0.1:8000/youngest_actors";
+            var uri = "http://127.0.0.1:8000/youngest_actors";
+            fetchData(uri);
         }
 
         function person_search() {
             var personInput = document.getElementById("personInput").value;
-            window.location.href = "http://127.0.0.1:8000/people/" + personInput;
+            var uri = "http://127.0.0.1:8000/people/" + personInput;
+            fetchData(uri);
         }
 
         function media_search() {
             var mediaInput = document.getElementById("mediaInput").value;
-            window.location.href = "http://127.0.0.1:8000/titles/" + mediaInput;
+            var uri = "http://127.0.0.1:8000/titles/" + mediaInput;
+            fetchData(uri);
         }
 
         function prof_amount() {
             var professionInput = document.getElementById("professionInput").value;
-            window.location.href = "http://127.0.0.1:8000/professions_amount/" + professionInput;
+            var uri = "http://127.0.0.1:8000/professions_amount/" + professionInput;
+            fetchData(uri);
         }
 
         function person_profs() {
             var professionInput = document.getElementById("person_prof_input").value;
-            window.location.href = "http://127.0.0.1:8000/person_professions/" + professionInput;
+            var uri = "http://127.0.0.1:8000/person_professions/" + professionInput;
+            fetchData(uri);
         }
 
         function title_gen() {
             var input = document.getElementById("title_gen_input").value;
-            window.location.href = "http://127.0.0.1:8000/genre/" + input;
+            var uri = "http://127.0.0.1:8000/genre/" + input;
+            fetchData(uri);
         }
 
-        function amount_of_movies_by_person() {
+        function get_movie_count_by_person() {
             var input = document.getElementById("amount_of_movies_by_person").value;
-            window.location.href = "http://127.0.0.1:8000/person/movie_count" + input;
+            var uri = "http://127.0.0.1:8000/person/movie_count/" + input;
+            fetchData(uri);
         }
 
-        function gens() {
+        function get_titles_from_genres() {
             var input = document.getElementById("gen_title_input").value;
+            var min = document.getElementById("gen_title_min").value;
+            var max = document.getElementById("gen_title_max").value;
 
             let url = "?g=" + input.replace(/\s/g, '').replace(/,/g, '&g=');
 
-            window.location.href = "http://127.0.0.1:8000/genres/" + url;
+            var uri = "http://127.0.0.1:8000/genres/" + url;
+            uri += "&start=" + min + "&end=" + max;
+            fetchData(uri);
         }
     </script>
 </body>

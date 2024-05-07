@@ -28,11 +28,6 @@ def read_root():
     return "Imdb Search API"
 
 
-@app.get("/items/{item_id}")
-def read_item(item_id, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-
-
 @app.get("/people_id/{id}")
 def get_person(id: str, test: Union[str, None] = None):
     cursor = db.cursor()
@@ -43,14 +38,14 @@ def get_person(id: str, test: Union[str, None] = None):
     if len(result) == 0:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    return {"person": result[0], "test": test}
+    return {"header":"people_id", "data": result}
 
 @app.get("/people/{name}")
 def get_person(name: str):
     name = name.replace(" ", " +")
     cursor = db.cursor()
     print(name)
-    cursor.execute(f"SELECT name FROM people WHERE MATCH(name) AGAINST(\"{name}\" IN BOOLEAN MODE)")
+    cursor.execute(f"SELECT id, name FROM people WHERE MATCH(name) AGAINST(\"{name}\" IN BOOLEAN MODE) limit 1000")
     result = cursor.fetchall()
     db.commit()
 
@@ -58,7 +53,7 @@ def get_person(name: str):
     if len(result) == 0:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    return {"people": result}
+    return {"header":"people", "data":result}
 
 @app.get("/title/{id}")
 def get_title(id: str):
@@ -70,7 +65,7 @@ def get_title(id: str):
     if len(result) == 0:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    return {"title": result[0]}
+    return {"header":"title", "data":result}
 
 @app.get("/titles/{name}")
 def get_title(name: str):
@@ -87,7 +82,7 @@ def get_title(name: str):
     if len(result) == 0:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    return {"titles": result}
+    return {"header":"titles", "data":result}
 
 
 @app.get("/person/movie_count/{id}")
@@ -100,20 +95,24 @@ def get_movie_count_by_person(id: str):
     if result == 0:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    return {"count": result}
+    return {"header":"count", "data":result}
 
 
 @app.get("/genres/")
 def get_titles_by_genres(
-        g: List[str] = Query(None),
-        start: Union[str, None] = 0,
-        end: Union[str, None] = 10):
+    g: List[str] = Query(None),
+    start: Union[str, None] = 0,
+    end: Union[str, None] = 1000):
 
     g = [g.title() for g in g]
-    list_str = str(g)[1:-1].strip(",").strip("'")
+    print(g)
+    list_str = ""
+    for genre in g:
+        list_str += genre + ", "
+    list_str = list_str[:-2]
 
     cursor = db.cursor()
-    cursor.callproc("GetTitlesByGenres", ['Drama, Short', start, end])
+    cursor.callproc("GetTitlesByGenres", [list_str, start, end])
     db.commit()
 
     # Procedures store results in an iterator, since GetTItlesByGenres
@@ -122,9 +121,9 @@ def get_titles_by_genres(
     result = next(data).fetchall()
 
     if len(result) == 0:
-        raise HTTPException(status_code=404, detail="Item not found")
+        result = [[]]
 
-    return {"titles": result}
+    return {"header":"titles by genre(s)", "data":result}
 
 
 
@@ -144,24 +143,8 @@ def get_amount_profession(prof: str):
 
     ans = f"amount of {prof}s"
 
-    return {ans: result}
+    return {"header": ans, "data": [[result]]}
 
-"""
-(!) JÄMFÖR VILKEN SOM ÄR SNABBAST
-@app.get("/professions_amount/{prof}")
-def get_writers(prof : str):
-    cursor = db.cursor()
-    cursor.execute(f"SELECT p.name, prof.profession FROM people p JOIN peoples_professions prof ON p.id = prof.person WHERE prof.profession = '{prof}';")
-    result = cursor.fetchall()
-    db.commit()
-
-    if len(result) == 0:
-        raise HTTPException(status_code=404, detail="Item not found")
-
-    ans = f"amount of {prof}s"
-
-    return {ans : len(result)}
-"""
 
 
 """
@@ -179,7 +162,7 @@ def get_ten_specific_prof(prof : str):
 
     ans = f"amount of {prof}s"
 
-    return {ans : result[0:10]}
+    return {"header": ans, "data": result[0:10]}
 
 
 """
@@ -197,7 +180,7 @@ def get_youngest_actors():
 
     ans = f"youngest actors"
 
-    return {ans : result}
+    return {"header": ans, "data": result}
 
 
 """
@@ -217,7 +200,7 @@ def get_person_professions(person_id: str):
 
     ans = f"id {person_id} is working as "
 
-    return {ans : result}
+    return {"header": ans, "data": result}
 
 
 @app.get("/genre/{title_id}")
@@ -232,30 +215,5 @@ def get_genre_by_title_id(title_id : str):
 
     ans = f"id {title_id} is a "
 
-    return {ans : result}
-
-
-
-
-
-"""
-@app.get("/genre/{genre}")
-def get_person_professions(genre : list):
-
-    result = []
-
-    for item in genre:
-        cursor = db.cursor()
-        cursor.execute(f"SELECT * FROM titles_genre WHERE genre = '{item}';")
-        result.append(cursor.fetchall())
-        db.commit()
-
-        if len(result) == 0:
-            raise HTTPException(status_code=404, detail="Person not found")
-
-        ans = f"id {genre} is working as "
-
-    return {ans : result}
-"""
-    
+    return {"header": ans, "data": result}
 
