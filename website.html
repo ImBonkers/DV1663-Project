@@ -46,7 +46,57 @@
         <button type="button" onclick="person_profs()">Go</button>
     </form>
 
+    <div id="table-container"></div>
+
     <script>
+        async function fetchData() {
+            try {
+                // Change the URL to the API you want to use
+                const response = await fetch("http://127.0.0.1:8000/person/John");
+                const data = await response.json();
+                console.log(data);
+                
+                // Call function to create table with data
+                createTable(data);
+            } catch (error) {
+                console.error('Error fetching data: ', error);
+            }
+        }
+
+        function createTable(data) {
+            const container = document.getElementById('table-container');
+            const table = document.createElement('table');
+            table.setAttribute('border', '1');
+            
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            if (data.length > 0) {
+                Object.keys(data[0]).forEach(key => {
+                    const headerCell = document.createElement('th');
+                    headerCell.textContent = key;
+                    headerRow.appendChild(headerCell);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+            }
+
+            const tbody = document.createElement('tbody');
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                Object.values(item).forEach(value => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                });
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+            
+            container.appendChild(table);
+        }
+
+        fetchData();
+        
         function goToHomePage() {
             window.location.href = "http://127.0.0.1:8000/";
         }

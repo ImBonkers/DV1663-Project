@@ -3,6 +3,7 @@ import os
 from typing import Union, List
 from fastapi import FastAPI, Query,  HTTPException
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 db = mysql.connector.connect(
@@ -14,6 +15,13 @@ db = mysql.connector.connect(
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 @app.get("/")
 def read_root():
